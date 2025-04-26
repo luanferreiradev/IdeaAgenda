@@ -3,5 +3,5 @@ from fastapi import APIRouter
 router = APIRouter()
 
 @router.get("/")
-def root():
+async def root():
     return {"mensagem": "Hello World"}
