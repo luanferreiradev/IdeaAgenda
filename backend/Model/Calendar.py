@@ -9,4 +9,6 @@ class Calendar(Base):
     id = Column(Integer, primary_key=True, index=True)
     month = Column(Integer, index=True)
     year = Column(Integer, index=True)
+    day = Column(Integer, index=True)
+
     tasks = relationship("Task", back_populates="calendar")

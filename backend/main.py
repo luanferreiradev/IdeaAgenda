@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from backend.database import Base, engine
+from Controller import TasksController, CalendarController
 from backend.Model import Calendar, Tasks
 
 import uvicorn
@@ -12,6 +13,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="Sistema de Organização de Tarefas", lifespan=lifespan)
+
+app.add_route("/event", TasksController.router)
+app.add_route("/calendar", CalendarController.router)
 
 """app.add_middleware(
     CORSMiddleware,
