@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from backend.database import Base, engine
-from Controller import TasksController, CalendarController
+from starlette.middleware.sessions import SessionMiddleware
+from Controller import TasksController, CalendarController, AuthController
 from backend.Model import Calendar, Tasks
 import uvicorn
 
@@ -13,8 +14,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Sistema de Organização de Tarefas", lifespan=lifespan)
 
+app.add_middleware(SessionMiddleware, secret_key="s3cr3tK3yParaMinhaApp2025")
+
 app.include_router(TasksController.router, prefix="/event")
 app.include_router(CalendarController.router, prefix="/calendar")
+app.include_router(AuthController.router, prefix="/auth")
 
 """app.add_middleware(
     CORSMiddleware,

@@ -22,6 +22,11 @@ async def get_calendar(calendar_id: int, db: AsyncSession):
     return CalendarMapper.toDto(calendar)
 
 async def create_calendar(calendar_dto: CalendarDto, db: AsyncSession):
+    result  = await db.execute(select(Calendar).where(Calendar.id == calendar_dto.id))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Calendar with id {calendar_dto.id} already exists")
+
+
     calendar_model = CalendarMapper.toModel(calendar_dto)
 
     db.add(calendar_model)
