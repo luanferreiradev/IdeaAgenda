@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from backend.Model.Calendar import Calendar
 
 class TaskDto(BaseModel):
     id: Optional[int] = None
@@ -11,3 +12,4 @@ class TaskDto(BaseModel):
     updated_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     completed: bool = False
+    calendar_id: int

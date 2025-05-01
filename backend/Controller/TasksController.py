@@ -1,63 +1,40 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
+from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database import get_db
-from backend.Mapper.TasksMapper import TasksMapper
 from backend.Dto.TasksDto import TaskDto
-from backend.Model.Tasks import Task
+from backend.Service import TasksService
 from typing import List
-from datetime import datetime
+from fastapi.responses import JSONResponse
+from backend.database import get_db
 
 router = APIRouter()
 
-@router.post("/post", response_model=TaskDto)
+@router.post("/post", response_model=dict, status_code=201)
 async def create_task(task_dto: TaskDto, db: AsyncSession = Depends(get_db)):
-    task_model = TasksMapper.toModel(task_dto)
+    task = await TasksService.create_task(task_dto, db)
 
-    db.add(task_model)
-    await db.commit()
-    await db.refresh(task_model)
+    return {"Message: ": "Task successfully created", "Body: ": task}
 
-    return TasksMapper.toDto(task_model)
-
-@router.get("/get", response_model=List[TaskDto])
+@router.get("/get", response_model=dict, status_code=200)
 async def get_all_tasks(db: AsyncSession = Depends(get_db)):
-    tasks = await db.query(Task).all()
+    tasks = await TasksService.get_all_tasks(db)
 
-    return TasksMapper.toDtoList(tasks)
+    return {"Message: ": "Tasks successfully found", "Body: ": tasks}
 
-@router.get("/getById/{task_id}", response_model=TaskDto)
+@router.get("/getById/{task_id}", response_model=dict, status_code=200)
 async def get_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    task = await db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    task = await TasksService.get_task(task_id, db)
 
-    return TasksMapper.toDto(task)
+    return {"Message: ": "Task successfully found", "Body: ": task}
 
-@router.put("/edit/{task_id}", response_model=TaskDto)
+@router.put("/edit/{task_id}", response_model=dict, status_code=201)
 async def update_task(task_id: int, task_dto: TaskDto, db: AsyncSession = Depends(get_db)):
-    task = await db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    task = await TasksService.update_task(task_id, task_dto, db)
 
-    task.title = task_dto.title
-    task.description = task_dto.description
-    task.completion_date = task_dto.completion_date
-    task.completed = task_dto.completed
-    task.completed_at = task_dto.completed_at
-    task.updated_at = datetime.utcnow()
+    return {"Message: ": "Task successfully updated", "Body: ": task}
 
-    await db.commit()
-    await db.refresh(task)
+@router.delete("/delete/{task_id}", response_model=dict, status_code=200)
+async def delete_task(task_id:int, db: AsyncSession  = Depends(get_db)):
+    result = await TasksService.delete_task(task_id, db)
 
-    return TasksMapper.toDto(task)
-
-@router.delete("/delete/{task_id}")
-async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    task = await db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    await db.delete(task)
-    await db.commit()
-    
-    return {"message": "Task deleted successfully"}
+    return result

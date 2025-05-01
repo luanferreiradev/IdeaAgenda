@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from backend.database import Base, engine
 from Controller import TasksController, CalendarController
 from backend.Model import Calendar, Tasks
-
 import uvicorn
 
 @asynccontextmanager
@@ -14,8 +13,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Sistema de Organização de Tarefas", lifespan=lifespan)
 
-app.add_route("/event", TasksController.router)
-app.add_route("/calendar", CalendarController.router)
+app.include_router(TasksController.router, prefix="/event")
+app.include_router(CalendarController.router, prefix="/calendar")
 
 """app.add_middleware(
     CORSMiddleware,
@@ -30,4 +29,4 @@ def root():
     return {"mensagem": "Hello World"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000 , reload=True)

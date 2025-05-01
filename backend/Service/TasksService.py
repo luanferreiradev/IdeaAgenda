@@ -1,0 +1,67 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import get_db
+from backend.Mapper.TasksMapper import TasksMapper
+from backend.Dto.TasksDto import TaskDto
+from backend.Model.Tasks import Task
+from sqlalchemy.future import select
+from typing import List
+from datetime import datetime
+
+async def create_task(task_dto: TaskDto, db: AsyncSession):
+    task_model = TasksMapper.toModel(task_dto)
+
+    db.add(task_model)
+    await db.commit()
+    await db.refresh(task_model)
+
+    return TasksMapper.toDto(task_model)
+
+async def get_all_tasks(db: AsyncSession):
+    result = await db.execute(select(Task))
+    tasks =  result.scalars().all()
+
+    if not tasks:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tasks not found")
+
+    return [TasksMapper.toDto(task) for task in tasks]
+
+async def get_task(task_id: int, db: AsyncSession):
+    result = await db.execute(select(Task).where(Task.id == task_id))
+    task = result.scalar_one_or_none()
+
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    return TasksMapper.toDto(task)
+
+async def update_task(task_id: int, task_dto: TaskDto, db: AsyncSession):
+    result = await db.execute(select(Task).where(Task.id == task_id))
+    task = result.scalar_one_or_none()
+
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    task.title = task_dto.title
+    task.description = task_dto.description
+    task.completion_date = task_dto.completion_date
+    task.completed = task_dto.completed
+    task.completed_at = task_dto.completed_at
+    task.updated_at = datetime.utcnow()
+
+    await db.commit()
+    await db.refresh(task)
+
+    return TasksMapper.toDto(task)
+
+async def delete_task(task_id: int, db: AsyncSession):
+    result = await db.execute(select(Task).where(Task.id == task_id))
+    task = result.scalar_one_or_none()
+
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    await db.delete(task)
+    await db.commit()
+
+    return {"Message": "Task deleted successfully", "Id": task_id}

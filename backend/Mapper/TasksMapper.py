@@ -1,20 +1,25 @@
 from backend.Model.Tasks import Task
 from backend.Dto.TasksDto import TaskDto
-from typing import List, Optional
+from typing import List
+from datetime import timezone
 from datetime import datetime
 
 class TasksMapper:
     @staticmethod
     def toModel(taskDto: TaskDto) -> Task:
+        def remove_tz(dt):
+            return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt and dt.tzinfo else dt
+
         return Task(
             id=taskDto.id,
             title=taskDto.title,
             description=taskDto.description,
-            completion_date=taskDto.completion_date,
-            created_at=taskDto.created_at or datetime.utcnow(),
-            updated_at=taskDto.updated_at or datetime.utcnow(),
-            completed_at=taskDto.completed_at,
-            completed=taskDto.completed
+            completion_date=remove_tz(taskDto.completion_date),
+            created_at=remove_tz(taskDto.created_at) or datetime.utcnow(),
+            updated_at=remove_tz(taskDto.updated_at) or datetime.utcnow(),
+            completed_at=remove_tz(taskDto.completed_at),
+            completed=taskDto.completed,
+            calendar_id=taskDto.calendar_id
         )
 
     @staticmethod
@@ -27,7 +32,8 @@ class TasksMapper:
             created_at=task.created_at,
             updated_at=task.updated_at,
             completed_at=task.completed_at,
-            completed=task.completed
+            completed=task.completed,
+            calendar_id=task.calendar_id
         )
 
     @staticmethod
