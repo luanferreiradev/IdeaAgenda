@@ -1,3 +1,4 @@
+from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.Mapper.CalendarMapper import CalendarMapper
 from backend.Dto.CalendarDto import CalendarDto
@@ -13,7 +14,7 @@ async def get_all_calendars(db: AsyncSession):
 
     return [CalendarMapper.toDto(calendar) for calendar in calendars]
 
-async def get_calendar(calendar_id: int, db: AsyncSession):
+async def get_calendar_by_id(calendar_id: int, db: AsyncSession):
     result = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == calendar_id))
     calendar = result.unique().scalar_one_or_none()
 
@@ -69,5 +70,45 @@ async def delete_calendar(calendar_id: int, db: AsyncSession):
 
     return {"Message": "Calendar deleted successfully", "Id": calendar_id}
 
-"""async def merge_calendar(calendar_id: int, merge_id: int, db: AsyncSession):
-    result = await db.execute("", )"""
+async def preview_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
+    result_1 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_1))
+    main_calendar = result_1.unique().scalar_one_or_none()
+
+    if not main_calendar:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Main calendar not found.")
+
+    result_2 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_2))
+    branch_calendar = result_2.unique().scalar_one_or_none()
+
+    if not branch_calendar:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Branch calendar not found.")
+
+    for temp in branch_calendar.tasks:
+        main_calendar.tasks.append(temp)
+
+    return CalendarMapper.toDto(main_calendar)
+
+async def save_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
+    result_1 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_1))
+    main_calendar = result_1.unique().scalar_one_or_none()
+
+    if not main_calendar:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Main calendar not found.")
+
+    result_2 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_2))
+    branch_calendar = result_2.unique().scalar_one_or_none()
+
+    if not branch_calendar:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Branch calendar not found.")
+
+    for temp in branch_calendar.tasks:
+        main_calendar.tasks.append(temp)
+        temp.calendar_id = id_2
+
+    await db.commit()
+    await db.refresh(main_calendar)
+
+    result = await db.execute(select(Calendar).options(selectinload(Calendar.tasks)).where(Calendar.id == main_calendar.id))
+    calendar_with_tasks = result.scalar_one()
+
+    return CalendarMapper.toDto(calendar_with_tasks)

@@ -20,7 +20,7 @@ async def get_all_calendars(db: AsyncSession = Depends(get_db)):
 
 @router.get("/getById/{calendar_id}", response_model=dict, status_code=200)
 async def get_calendar(calendar_id: int, db: AsyncSession = Depends(get_db)):
-    calendar = await CalendarService.get_calendar(calendar_id, db)
+    calendar = await CalendarService.get_calendar_by_id(calendar_id, db)
     
     return {"Message: ": "Calendar successfully found", "Body: ": calendar.dict()}
 
@@ -36,10 +36,16 @@ async def delete_calendar(calendar_id: int, db: AsyncSession = Depends(get_db)):
 
     return calendar
 
-"""@router.get("/merge")
-async def merge_calendar(main_id: int, branch_id: int):
-    #calendar = await CalendarService
+@router.get("/preview_merge", response_model=dict, status_code=200)
+async def preview_merge_calendar(main_id: int, branch_id: int, db: AsyncSession = Depends(get_db)):
+    calendar = await CalendarService.preview_merge_calendar(main_id, branch_id, db)
 
-    return None"""
+    return {"Message: ": "Calendar successfully edited", "Body: ": calendar.dict()}
+
+@router.post("/save_merge", response_model=dict, status_code=200)
+async def preview_merge_calendar(main_id: int, branch_id: int, db: AsyncSession = Depends(get_db)):
+    calendar = await CalendarService.save_merge_calendar(main_id, branch_id, db)
+
+    return {"Message: ": "Calendar successfully edited", "Body: ": calendar.dict()}
 
     
