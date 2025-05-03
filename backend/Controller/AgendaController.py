@@ -10,7 +10,6 @@ from fastapi import HTTPException, APIRouter, Request
 
 router = APIRouter()
 
-# If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 
@@ -27,12 +26,11 @@ async def get_google_calendar_events(request: Request):
         creds = Credentials(token=access_token, scopes=SCOPES)
         service = build("calendar", "v3", credentials=creds)
 
-        # Remove 'timeMin' para buscar eventos de qualquer data
         events_result = service.events().list(
             calendarId="primary",
-            maxResults=50,  # Limite opcional (pode aumentar ou remover)
+            maxResults=50,
             singleEvents=True,
-            orderBy="startTime"  # Ordena por data de início
+            orderBy="startTime"
         ).execute()
 
         return {"events": events_result.get('items', [])}
@@ -57,8 +55,8 @@ async def save_google_calendar_events(request: Request):
             scopes=SCOPES
         )
         service = build("calendar", "v3", credentials=creds)
-
-        # Dados do evento
+        
+        #Evento genério, Editar em caso de testes
         event = {
             'summary': 'Google I/O 2015',
             'location': '800 Howard St., San Francisco, CA 94103',
@@ -84,7 +82,6 @@ async def save_google_calendar_events(request: Request):
             },
         }
 
-        # Insere o evento
         created_event = service.events().insert(
             calendarId='primary',
             body=event
