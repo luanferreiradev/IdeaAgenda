@@ -5,8 +5,9 @@ from backend.Mapper.TasksMapper import TasksMapper
 from backend.Dto.TasksDto import TaskDto
 from backend.Model.Tasks import Task
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 async def create_task(task_dto: TaskDto, db: AsyncSession):
     task_model = TasksMapper.toModel(task_dto)
@@ -18,12 +19,9 @@ async def create_task(task_dto: TaskDto, db: AsyncSession):
     return TasksMapper.toDto(task_model)
 
 async def get_all_tasks(db: AsyncSession):
-    result = await db.execute(select(Task))
-    tasks =  result.scalars().all()
+    result = await db.execute(select(Task).options(selectinload(Task.calendar)))
 
-    if not tasks:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tasks not found")
-
+    tasks = result.scalars().all()
     return [TasksMapper.toDto(task) for task in tasks]
 
 async def get_task(task_id: int, db: AsyncSession):
@@ -44,10 +42,10 @@ async def update_task(task_id: int, task_dto: TaskDto, db: AsyncSession):
 
     task.title = task_dto.title
     task.description = task_dto.description
-    task.completion_date = task_dto.completion_date
+    task.completion_date = TasksMapper.remove_tz(task_dto.completion_date)
     task.completed = task_dto.completed
-    task.completed_at = task_dto.completed_at
-    task.updated_at = datetime.utcnow()
+    task.completed_at = TasksMapper.remove_tz(task_dto.completed_at)
+    task.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     await db.commit()
     await db.refresh(task)

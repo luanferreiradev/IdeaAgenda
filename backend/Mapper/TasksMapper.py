@@ -1,23 +1,23 @@
 from backend.Model.Tasks import Task
 from backend.Dto.TasksDto import TaskDto
 from typing import List
-from datetime import timezone
-from datetime import datetime
+from datetime import timezone, datetime
 
 class TasksMapper:
     @staticmethod
-    def toModel(taskDto: TaskDto) -> Task:
-        def remove_tz(dt):
-            return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt and dt.tzinfo else dt
+    def remove_tz(dt):
+        return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt and dt.tzinfo else dt
 
+    @staticmethod
+    def toModel(taskDto: TaskDto) -> Task:
         return Task(
             id=taskDto.id,
             title=taskDto.title,
             description=taskDto.description,
-            completion_date=remove_tz(taskDto.completion_date),
-            created_at=remove_tz(taskDto.created_at) or datetime.utcnow(),
-            updated_at=remove_tz(taskDto.updated_at) or datetime.utcnow(),
-            completed_at=remove_tz(taskDto.completed_at),
+            completion_date=TasksMapper.remove_tz(taskDto.completion_date),
+            created_at=TasksMapper.remove_tz(taskDto.created_at) or datetime.utcnow(),
+            updated_at=TasksMapper.remove_tz(taskDto.updated_at) or datetime.utcnow(),
+            completed_at=TasksMapper.remove_tz(taskDto.completed_at),
             completed=taskDto.completed,
             calendar_id=taskDto.calendar_id
         )
@@ -28,10 +28,10 @@ class TasksMapper:
             id=task.id,
             title=task.title,
             description=task.description,
-            completion_date=task.completion_date,
-            created_at=task.created_at,
-            updated_at=task.updated_at,
-            completed_at=task.completed_at,
+            completion_date=TasksMapper.remove_tz(task.completion_date),
+            created_at=TasksMapper.remove_tz(task.created_at),
+            updated_at=TasksMapper.remove_tz(task.updated_at),
+            completed_at=TasksMapper.remove_tz(task.completed_at),
             completed=task.completed,
             calendar_id=task.calendar_id
         )

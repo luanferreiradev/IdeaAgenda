@@ -4,20 +4,18 @@ from backend.Dto.CalendarDto import CalendarDto
 from backend.Model.Calendar import Calendar
 from fastapi import HTTPException, status
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 
 async def get_all_calendars(db: AsyncSession):
-    result = await db.execute(select(Calendar))
+    result = await db.execute(select(Calendar).options(selectinload(Calendar.tasks)))
     calendars = result.scalars().all()
 
     return [CalendarMapper.toDto(calendar) for calendar in calendars]
 
 async def get_calendar(calendar_id: int, db: AsyncSession):
-    result = await db.execute(select(Calendar).where(Calendar.id == calendar_id))
-    calendar = result.scalar_one_or_none()
-    if not calendar:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Calendar not found")
+    result = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == calendar_id))
+    calendar = result.unique().scalar_one_or_none()
 
     return CalendarMapper.toDto(calendar)
 
