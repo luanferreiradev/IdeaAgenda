@@ -3,6 +3,7 @@ import os.path
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from backend.Dto.EventRequest import EventRequest, Reminders, ReminderOverride, Attendee, EventDateTime
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -10,7 +11,6 @@ from fastapi import HTTPException, APIRouter, Request
 
 router = APIRouter()
 
-# If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 
@@ -27,12 +27,11 @@ async def get_google_calendar_events(request: Request):
         creds = Credentials(token=access_token, scopes=SCOPES)
         service = build("calendar", "v3", credentials=creds)
 
-        # Remove 'timeMin' para buscar eventos de qualquer data
         events_result = service.events().list(
             calendarId="primary",
-            maxResults=50,  # Limite opcional (pode aumentar ou remover)
+            maxResults=50,
             singleEvents=True,
-            orderBy="startTime"  # Ordena por data de início
+            orderBy="startTime"  
         ).execute()
 
         return {"events": events_result.get('items', [])}
@@ -42,13 +41,17 @@ async def get_google_calendar_events(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
-@router.get("/events/post")
-async def save_google_calendar_events(request: Request):
+@router.post("/events/post")
+async def get_google_calendar_events(request: Request, event_request: EventRequest):
     try:
-        if 'user' not in request.session:
+        if 'user' not in request.session and not event_request.access_token:
             raise HTTPException(status_code=401, detail="Não autenticado")
 
-        access_token = request.session['user'].get('access_token')
+        access_token = (
+            request.session['user'].get('access_token')
+            if 'user' in request.session else event_request.access_token
+        )
+
         if not access_token:
             raise HTTPException(status_code=400, detail="Token de acesso não encontrado")
 
@@ -58,33 +61,30 @@ async def save_google_calendar_events(request: Request):
         )
         service = build("calendar", "v3", credentials=creds)
 
-        # Dados do evento
         event = {
-            'summary': 'Google I/O 2015',
-            'location': '800 Howard St., San Francisco, CA 94103',
-            'description': 'A chance to hear more about Google\'s developer products.',
+            'summary': event_request.summary,
+            'location': event_request.location,
+            'description': event_request.description,
             'start': {
-                'dateTime': '2015-05-28T09:00:00-07:00',
-                'timeZone': 'America/Los_Angeles',
+                'dateTime': event_request.start.dateTime.isoformat(),
+                'timeZone': event_request.start.timeZone,
             },
             'end': {
-                'dateTime': '2015-05-28T17:00:00-07:00',
-                'timeZone': 'America/Los_Angeles',
+                'dateTime': event_request.end.dateTime.isoformat(),
+                'timeZone': event_request.end.timeZone,
             },
-            'attendees': [
-                {'email': 'lpage@example.com'},
-                {'email': 'sbrin@example.com'},
-            ],
+            'attendees': [{'email': attendee.email} for attendee in event_request.attendees],
             'reminders': {
-                'useDefault': False,
+                'useDefault': event_request.reminders.useDefault if event_request.reminders else True,
                 'overrides': [
-                    {'method': 'email', 'minutes': 24 * 60},
-                    {'method': 'popup', 'minutes': 10},
-                ],
-            },
+                    {
+                        'method': r.method,
+                        'minutes': r.minutes
+                    } for r in event_request.reminders.overrides
+                ] if event_request.reminders and event_request.reminders.overrides else []
+            }
         }
 
-        # Insere o evento
         created_event = service.events().insert(
             calendarId='primary',
             body=event

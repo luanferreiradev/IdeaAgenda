@@ -27,7 +27,7 @@ app.add_middleware(
 app.include_router(TasksController.router, prefix="/event")
 app.include_router(CalendarController.router, prefix="/calendar")
 app.include_router(AuthController.router, prefix="/auth")
-app.include_router(AgendaController.router, prefix="/read")
+app.include_router(AgendaController.router, prefix="/api")
 
 """app.add_middleware(
     CORSMiddleware,
