@@ -6,6 +6,7 @@ from backend.Model.Calendar import Calendar
 from fastapi import HTTPException, status
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, joinedload
+from uuid import UUID
 
 
 async def get_all_calendars(db: AsyncSession):
@@ -14,17 +15,19 @@ async def get_all_calendars(db: AsyncSession):
 
     return [CalendarMapper.toDto(calendar) for calendar in calendars]
 
-async def get_calendar_by_id(calendar_id: int, db: AsyncSession):
+
+async def get_calendar_by_id(calendar_id: UUID, db: AsyncSession):
     result = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == calendar_id))
     calendar = result.unique().scalar_one_or_none()
 
     return CalendarMapper.toDto(calendar)
 
-async def create_calendar(calendar_dto: CalendarDto, db: AsyncSession):
-    result  = await db.execute(select(Calendar).where(Calendar.id == calendar_dto.id))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Calendar with id {calendar_dto.id} already exists")
 
+async def create_calendar(calendar_dto: CalendarDto, db: AsyncSession):
+    result = await db.execute(select(Calendar).where(Calendar.id == calendar_dto.id))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Calendar with id {calendar_dto.id} already exists")
 
     calendar_model = CalendarMapper.toModel(calendar_dto)
 
@@ -39,13 +42,15 @@ async def create_calendar(calendar_dto: CalendarDto, db: AsyncSession):
 
     return CalendarMapper.toDto(calendar_with_tasks)
 
-async def edit_calendar(calendar_dto: CalendarDto, calendar_id: int, db: AsyncSession):
+
+async def edit_calendar(calendar_dto: CalendarDto, calendar_id: UUID, db: AsyncSession):
     result = await db.execute(select(Calendar).where(Calendar.id == calendar_id))
     calendar = result.scalar_one_or_none()
 
     if not calendar:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Calendar with id {calendar_id} not found"       )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Calendar with id {calendar_id} not found")
 
+    calendar.id = calendar_id
     calendar.name = calendar_dto.name
 
     await db.commit()
@@ -58,7 +63,8 @@ async def edit_calendar(calendar_dto: CalendarDto, calendar_id: int, db: AsyncSe
 
     return CalendarMapper.toDto(calendar_with_tasks)
 
-async def delete_calendar(calendar_id: int, db: AsyncSession):
+
+async def delete_calendar(calendar_id: UUID, db: AsyncSession):
     result = await db.execute(select(Calendar).where(Calendar.id == calendar_id))
     calendar = result.scalar_one_or_none()
 
@@ -70,7 +76,8 @@ async def delete_calendar(calendar_id: int, db: AsyncSession):
 
     return {"Message": "Calendar deleted successfully", "Id": calendar_id}
 
-async def preview_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
+
+async def preview_merge_calendar(id_1: UUID, id_2: UUID, db: AsyncSession):
     result_1 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_1))
     main_calendar = result_1.unique().scalar_one_or_none()
 
@@ -88,7 +95,8 @@ async def preview_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
 
     return CalendarMapper.toDto(main_calendar)
 
-async def save_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
+
+async def save_merge_calendar(id_1: UUID, id_2: UUID, db: AsyncSession):
     result_1 = await db.execute(select(Calendar).options(joinedload(Calendar.tasks)).where(Calendar.id == id_1))
     main_calendar = result_1.unique().scalar_one_or_none()
 
@@ -108,7 +116,8 @@ async def save_merge_calendar(id_1: int, id_2: int, db: AsyncSession):
     await db.commit()
     await db.refresh(main_calendar)
 
-    result = await db.execute(select(Calendar).options(selectinload(Calendar.tasks)).where(Calendar.id == main_calendar.id))
+    result = await db.execute(
+        select(Calendar).options(selectinload(Calendar.tasks)).where(Calendar.id == main_calendar.id))
     calendar_with_tasks = result.scalar_one()
 
     return CalendarMapper.toDto(calendar_with_tasks)

@@ -12,7 +12,7 @@ class TasksMapper:
     def toModel(taskDto: TaskDto) -> Task:
         return Task(
             id=taskDto.id,
-            title=taskDto.title,
+            summary=taskDto.summary,
             description=taskDto.description,
             completion_date=TasksMapper.remove_tz(taskDto.completion_date),
             created_at=TasksMapper.remove_tz(taskDto.created_at) or datetime.utcnow(),
@@ -26,7 +26,7 @@ class TasksMapper:
     def toDto(task: Task) -> TaskDto:
         return TaskDto(
             id=task.id,
-            title=task.title,
+            summary=task.summary,
             description=task.description,
             completion_date=TasksMapper.remove_tz(task.completion_date),
             created_at=TasksMapper.remove_tz(task.created_at),

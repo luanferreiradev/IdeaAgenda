@@ -13,7 +13,6 @@ router = APIRouter()
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
-
 @router.get("/events/get")
 async def get_google_calendar_events(request: Request):
     try:
@@ -31,7 +30,7 @@ async def get_google_calendar_events(request: Request):
             calendarId="primary",
             maxResults=50,
             singleEvents=True,
-            orderBy="startTime"  
+            orderBy="startTime"
         ).execute()
 
         return {"events": events_result.get('items', [])}
@@ -99,4 +98,3 @@ async def get_google_calendar_events(request: Request, event_request: EventReque
         raise HTTPException(status_code=400, detail=f"Erro na API do Google: {str(error)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
-

@@ -8,6 +8,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from typing import List
 from datetime import datetime, timezone
+from uuid import UUID
 
 async def create_task(task_dto: TaskDto, db: AsyncSession):
     task_model = TasksMapper.toModel(task_dto)
@@ -20,11 +21,11 @@ async def create_task(task_dto: TaskDto, db: AsyncSession):
 
 async def get_all_tasks(db: AsyncSession):
     result = await db.execute(select(Task).options(selectinload(Task.calendar)))
-
     tasks = result.scalars().all()
+
     return [TasksMapper.toDto(task) for task in tasks]
 
-async def get_task(task_id: int, db: AsyncSession):
+async def get_task(task_id: UUID, db: AsyncSession):
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
 
@@ -33,7 +34,7 @@ async def get_task(task_id: int, db: AsyncSession):
 
     return TasksMapper.toDto(task)
 
-async def update_task(task_id: int, task_dto: TaskDto, db: AsyncSession):
+async def update_task(task_id: UUID, task_dto: TaskDto, db: AsyncSession):
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
 
@@ -52,7 +53,7 @@ async def update_task(task_id: int, task_dto: TaskDto, db: AsyncSession):
 
     return TasksMapper.toDto(task)
 
-async def delete_task(task_id: int, db: AsyncSession):
+async def delete_task(task_id: UUID, db: AsyncSession):
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
 
@@ -62,4 +63,4 @@ async def delete_task(task_id: int, db: AsyncSession):
     await db.delete(task)
     await db.commit()
 
-    return {"Message": "Task deleted successfully", "Id": task_id}
+    return {"Message": "Task deleted successfully", "Id": str(task_id)}
