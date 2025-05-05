@@ -11,6 +11,7 @@ class Task(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     summary = Column(String, index=True)
     description = Column(String, index=True)
+    location = Column(String, index=True)
     completion_date = Column(DateTime, default=None)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)

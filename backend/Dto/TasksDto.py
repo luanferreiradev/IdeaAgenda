@@ -7,6 +7,7 @@ class TaskDto(BaseModel):
     id: Optional[UUID] = None
     summary: str
     description: str
+    location: str
     completion_date: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
