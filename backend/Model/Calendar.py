@@ -13,5 +13,6 @@ class Calendar(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow())
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String, nullable=False)
 
     tasks = relationship("Task", back_populates="calendar")

@@ -9,6 +9,7 @@ class CalendarDto(BaseModel):
     name: str
     created_at: datetime
     updated_at: datetime
+    created_by: str = None
     tasks: List[TaskDto]
 
     class Config:

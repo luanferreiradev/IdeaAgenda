@@ -21,6 +21,7 @@ class CalendarMapper:
             name=calendarDto.name,
             created_at=CalendarMapper.remove_tz(calendarDto.created_at),
             updated_at=CalendarMapper.remove_tz(calendarDto.updated_at),
+            created_by=calendarDto.created_by,
             tasks=tasks
         )
 
@@ -31,5 +32,6 @@ class CalendarMapper:
             name=calendar.name,
             created_at=CalendarMapper.remove_tz(calendar.created_at),
             updated_at=CalendarMapper.remove_tz(calendar.updated_at),
+            created_by=calendar.created_by,
             tasks=TasksMapper.toDtoList(calendar.tasks) if hasattr(calendar, "tasks") else []
         )
